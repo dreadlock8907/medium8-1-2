@@ -7,83 +7,149 @@ namespace Task
     {
         public static void Main(string[] args)
         {
-            int obj1x = 5;
-            int obj1y = 5;
-            bool isalive1 = true;
-            int obj2x = 10;
-            int obj2y = 10;
-            bool isalive2 = true;
-            int obj3x = 15;
-            int obj3y = 15;
-            bool isalive3 = true;
+            GameObjectsPool pool = new GameObjectsPool();
+            pool.Add(new GameObject(name: "1", isAlive: true, position: new Position(5, 5)));
+            pool.Add(new GameObject(name: "2", isAlive: true, position: new Position(10, 10)));
+            pool.Add(new GameObject(name: "3", isAlive: true, position: new Position(15, 15)));
 
-            Random random = new Random();
-
-            while (true)
+            while(true)
             {
-                if (obj1x == obj2x && obj1y == obj2y)
+                pool.DestroyAllCollided();
+                pool.MoveAllRandom();
+                pool.ShowAllAlive();
+            }
+        }
+    }
+
+    public class GameObjectsPool
+    {
+        readonly List<GameObject> _pool;
+        readonly Random random;
+
+        public GameObjectsPool()
+        {
+            _pool = new List<GameObject>();
+            random = new Random();
+        }
+
+        public void Add(GameObject gameObject)
+        {
+            _pool.Add(gameObject);                
+        }
+
+        public void DestroyAllCollided()
+        {
+            for(int i = 0; i < _pool.Count; i++)
+            {
+                for (int k = 0; k < _pool.Count; k++)
                 {
-                    isalive1 = false;
-                    isalive2 = false;
-                }
-
-                if (obj1x == obj3x && obj1y == obj3y)
-                {
-                    isalive1 = false;
-                    isalive3 = false;
-                }
-
-                if (obj2x == obj3x && obj2y == obj3y)
-                {
-                    isalive2 = false;
-                    isalive3 = false;
-                }
-
-                obj1x += random.Next(-1, 1);
-                obj1y += random.Next(-1, 1);
-
-                obj2x += random.Next(-1, 1);
-                obj2y += random.Next(-1, 1);
-
-                obj3x += random.Next(-1, 1);
-                obj3y += random.Next(-1, 1);
-
-                if (obj1x < 0)
-                    obj1x = 0;
-
-                if (obj1y < 0)
-                    obj1y = 0;
-
-                if (obj2x < 0)
-                    obj2x = 0;
-
-                if (obj2y < 0)
-                    obj2y = 0;
-
-                if (obj3x < 0)
-                    obj3x = 0;
-
-                if (obj3y < 0)
-                    obj3y = 0;
-
-                if (isalive1)
-                {
-                    Console.SetCursorPosition(obj1x, obj1y);
-                    Console.Write("1");
-                }
-
-                if (isalive2)
-                {
-                    Console.SetCursorPosition(obj2x, obj2y);
-                    Console.Write("2");
-                }
-
-                if (isalive3)
-                {
-                    Console.SetCursorPosition(obj3x, obj3y);
-                    Console.Write("3");
+                    if(i == k)
+                        continue;
+                    
+                    GameObject current = _pool[i];
+                    GameObject other = _pool[k];
+                    
+                    if(current.IsCollidedWith(other)) 
+                        current.Destroy();
                 }
             }
+        }
+
+        public void MoveAllRandom()
+        {
+            for(int i = 0; i < _pool.Count; i++)
+                _pool[i].MoveOn(random.Next(-1, 1), random.Next(-1, 1));
+        }
+
+        public void ShowAllAlive()
+        {
+            for(int i = 0; i < _pool.Count; i++)
+            {
+                GameObject gameObject = _pool[i];
+                if(gameObject.IsAlive)
+                    gameObject.Show();
+            }
+        }
+    }
+
+    public class GameObject
+    {
+        public Position Position { get; private set; }
+        public bool IsAlive { get; private set; }
+        string Name { get; set; }
+
+        public GameObject(string name, bool isAlive, Position position)
+        {
+            Name = name;
+            IsAlive = isAlive;
+            Position = position;
+        }
+        
+        public void Destroy()
+        {
+            IsAlive = false;
+        }
+
+        public void MoveOn(int x, int y)
+        {
+            int newX = Position.X + x;
+            int newY = Position.Y + y;
+            
+            Position.Set(newX, newY);
+            Position.Normalize();
+        }
+        
+        public void Show()
+        {
+            Console.SetCursorPosition(Position.X, Position.Y);
+            Console.Write(Name);
+        }
+
+        public bool IsCollidedWith(GameObject gameObject)
+        {
+            return Position.EqualsTo(gameObject.Position);
+        }
+    }
+
+    public class Position
+    {
+        public int X => _x.Value;
+        public int Y => _y.Value;
+        
+        Coordinate _x;
+        Coordinate _y;
+
+        public Position(int x, int y)
+        {
+            _x = new Coordinate(x); 
+            _y = new Coordinate(y);
+        }
+
+        public void Set(int x, int y)
+        {
+            _x.Value = x;
+            _y.Value = y;
+        }
+
+        public void Normalize()
+        {
+            _x.Value = _x.Value > 0 ? _x.Value : 0;
+            _y.Value = _y.Value > 0 ? _y.Value : 0;
+        }
+
+        public bool EqualsTo(Position position)
+        {
+            return X == position.X && Y == position.Y;
+        }
+    }
+
+    public class Coordinate
+    {
+        public int Value { get; set; }
+
+        public Coordinate(int coordinate)
+        {
+            Value = coordinate;
         }
     }
 }
